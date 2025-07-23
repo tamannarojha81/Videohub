@@ -4,17 +4,12 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js";
+import {User} from "../models/user.model.js";
+
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const {
-         page = 1, 
-         limit = 10,
-         query = "",
-         sortBy = "createdAt", 
-         sortType = "desc",
-          userId, 
-         } = req.query;
-         
+    const { page = 1, limit = 10, query="", sortBy="createdAt", sortType="desc", userId } = req.query;
+           
          if(!req.user){
             throw new ApiError(401, "User needs to be logged in");
          }
@@ -45,7 +40,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     duration: 1,
                     isPublished: 1,
                     owner:{
-                        $arrayElementAt: ["$videoByOwner", 0],
+                        $arrayElementAt: ["$videosByOwner", 0],
                     },
                 },               
             },
@@ -80,9 +75,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 
 const publishVideo = asyncHandler(async (req,res) => {
-    const {VideoId} = req.params;
+    // const {VideoId} = req.params;
 
-    const { title, description, owner, duration } = req.body;
+    const { title, description, duration } = req.body;
    
     if(!title){
         throw new ApiError(400, "Title is required");
@@ -92,13 +87,14 @@ const publishVideo = asyncHandler(async (req,res) => {
         throw new ApiError(400, "Description is required")
     }
 
-    const videoFileLocalPath = req.file?.video[0]?.path
+    const videoFileLocalPath = req.files?.videoFile?.[0]?.path;
+    console.log("videoFileLocalPath: ", videoFileLocalPath);
 
     if(!videoFileLocalPath){
         throw new ApiError(400, "Video file is required");
     }
 
-    const videoFileCloudPath = await uploadonCloudinary(videoFileLocalPath)
+    const videoFileCloudPath = await uploadOnCloudinary(videoFileLocalPath)
 
     if(!videoFileCloudPath){
         throw new ApiError(400 , "Cloudinary Error: Video file is required");
@@ -110,7 +106,7 @@ const publishVideo = asyncHandler(async (req,res) => {
         throw new ApiError(400, "Thumbnail file is required");
     }
 
-    const thumbnailFileCloudPath = await uploadonCloudinary(thumbnailFileLocalPath)
+    const thumbnailFileCloudPath = await uploadOnCloudinary(thumbnailFileLocalPath)
 
     if(!thumbnailFileCloudPath){
         throw new ApiError(400 , "Cloudinary Error: Thumbnail file is required")
